@@ -23,19 +23,31 @@ abstract class BaseDataProvider
 
     public function updateOne($searchArray, $updateArray) {
         $result = $this->collectionObj->updateOne($searchArray, $updateArray);
-        return $result->isAcknowledged();
+        return $result->getModifiedCount();
     }
 
-    public function find($searchArray, $projection = []) {
+    public function updateMany($searchArrray, $updateArray){
+        $result = $this->collectionObj->updateMany($searchArrray, $updateArray);
+        return $result->getModifiedCount();
+    }
+
+    public function find($searchArray = [], $projection = []) {
         return  $this->collectionObj->find($searchArray, ["projection" => $projection])->toArray();
     }
 
     public function findOne($searchArray, $projection =[]){
         return $this->collectionObj->findOne($searchArray, ['projection' => $projection]);
+
     }
 
     public function deleteOne($searchArray) {
-        return $this->collectionObj->deleteOne($searchArray);
+        $result = $this->collectionObj->deleteOne($searchArray);
+        return $result->getDeletedCount();
+    }
+
+    public function recordCount($searchArray) {
+        $result = $this->collectionObj->countDocuments($searchArray);
+        return $result;
     }
 
 }
