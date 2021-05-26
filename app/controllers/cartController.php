@@ -78,23 +78,20 @@ class cartController
     private function processOrderData($data) {
         $cart = $this->getCartDetails($data['id']);
 
-
         foreach ($cart['orders'] as $key => $cartItem) {
 
-            $isQuantityAvailable = $this->checkQuantity($cart['orders'][$key]['book_id'], $cart['orders'][$key]['qty']);
-            print_r($isQuantityAvailable);
-
-            if($isQuantityAvailable) {
-                $cart['orders'][$key]['book_status'] = true;
-
-                $cart['total_price'] -= $cart['orders'][$key]['order_price'];
-                $cart['orders'][$key]['order_price'] = $cart['orders'][$key]['price'] * $cart['orders'][$key]['qty'];
-                $cart['total_price'] += $cart['orders'][$key]['order_price'];
+            if(!$cart['orders'][$key]['book_status']) {
+                $isQuantityAvailable = $this->checkQuantity($cart['orders'][$key]['book_id'], $cart['orders'][$key]['qty']);
+                if ($isQuantityAvailable) {
+                    $cart['orders'][$key]['book_status'] = true;
+                    $cart['total_price'] += $cart['orders'][$key]['order_price'];
+                }
             }
 
             $isPriceChanged = $this->checkPriceChanged($cart['orders'][$key]['book_id'], $cart['orders'][$key]['price']);
 
             if($isPriceChanged) {
+
                 $cart['total_price'] -= $cart['orders'][$key]['order_price'];
                 $cart['orders'][$key]['price'] = $this->getPrice($cart['orders'][$key]['book_id']);
                 $cart['orders'][$key]['order_price'] = $cart['orders'][$key]['price'] * $cart['orders'][$key]['qty'];
@@ -105,6 +102,7 @@ class cartController
         print_r($cart);
         exit();
     }
+
 
     private function checkPriceChanged($book_id, $price){
         $searchArray = ['_id' => new ObjectId($book_id)];
