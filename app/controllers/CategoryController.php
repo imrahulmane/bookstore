@@ -123,7 +123,4 @@ class CategoryController
         return $bookCount;
     }
 
-
-
-
 }

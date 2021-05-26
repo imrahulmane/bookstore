@@ -26,8 +26,8 @@ abstract class BaseDataProvider
         return $result->getModifiedCount();
     }
 
-    public function updateMany($searchArrray, $updateArray){
-        $result = $this->collectionObj->updateMany($searchArrray, $updateArray);
+    public function updateMany($searchArray, $updateArray){
+        $result = $this->collectionObj->updateMany($searchArray, $updateArray);
         return $result->getModifiedCount();
     }
 
