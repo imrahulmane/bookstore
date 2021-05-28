@@ -10,33 +10,49 @@ $configuration = [
 ];
 $app = new App($configuration);
 
-$app->post('/addtoCart', function($request, $response){
+$app->post('/cart', function($request, $response){
     $data = $request->getParam('data');
+    $data = json_decode($data, true);
     $cartController = new cartController();
     $result = $cartController->addtoCart($data);
     return $response->withJson($result);
 });
 
-$app->get('/cartDetails/{id}', function($request, $response){
+$app->get('/cart/{id}', function($request, $response){
     $id = $request->getAttribute('id');
     $cartController = new cartController();
     $result = $cartController->getCartDetails($id);
     return $response->withJson($result);
 });
 
-$app->get('/getAllCarts', function($request, $response){
+$app->get('/cart', function($request, $response){
     $cartController = new cartController();
     $result = $cartController->getAllCarts();
     return $response->withJson($result);
 });
 
-$app->post('/completeOrder', function($request, $response){
-    $data = $request->getParam('data');
+$app->post('/cart/complete/{cart_id}', function($request, $response){
+    $id = $request->getAttribute('cart_id');
+    $proceed = $request->getParam('proceed');
     $cartController = new cartController();
-    $result = $cartController->completeOrder($data);
+    $result = $cartController->completeOrder($id, $proceed);
     return $response->withJson($result);
 });
 
-//$app->post('/addtoCart', function($request, $response){});
+
+$app->delete('/cart/remove/{cart_id}', function($request, $response){
+    $id = $request->getAttribute('cart_id');
+    $cartController = new cartController();
+    $result = $cartController->removeCart($id);
+    return $response->withJson($result);
+});
+
+$app->delete('/cart/removeOne/{cart_id}', function($request, $response){
+    $id = $request->getAttribute('cart_id');
+    $item_id = $request->getParam('item_id');
+    $cartController = new cartController();
+    $result = $cartController->removeItemFromCart($id, $item_id);
+    return $response->withJson($result);
+});
 
 $app->run();

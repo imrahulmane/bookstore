@@ -50,4 +50,32 @@ abstract class BaseDataProvider
         return $result;
     }
 
+    public function replaceOne($searchArray, $updateArray){
+        $result = $this->collectionObj->replaceOne($searchArray, $updateArray);
+        return $result;
+    }
+
+    public  function bulkInsert($data) {
+        $query = [
+            'insertOne'  => [$data]
+        ];
+        return $query;
+    }
+    public  function bulkUpdate($searchArray, $updateArray) {
+        $query = [
+            'updateOne'  => [$searchArray, $updateArray]
+        ];
+        return $query;
+    }
+    public  function bulkDelete($searchArray) {
+        $query = [
+            'deleteOne'  => [$searchArray]
+        ];
+        return $query;
+    }
+    public  function bulkWrite($operations, $ordered=false) {
+        return $this->collectionObj->bulkWrite($operations, ['ordered' => $ordered]);
+    }
+
+
 }

@@ -11,14 +11,14 @@ $configuration = [
 ];
 $app = new App($configuration);
 
-$app->post('/addCategory', function($request, $response){
+$app->post('/category', function($request, $response){
     $parsedBody = $request->getParsedBody();
     $categoryController = new CategoryController();
     $result = $categoryController->createCategory($parsedBody);
     return $response->withStatus(200)->withJson($result);
 });
 
-$app->put('/updateCategory/{id}', function ($request, $response){
+$app->put('/category/{id}', function ($request, $response){
     $id = $request->getAttribute('id');
     $parsedBody = $request->getParsedBody();
     $categoryController = new CategoryController();
@@ -26,20 +26,20 @@ $app->put('/updateCategory/{id}', function ($request, $response){
     return $response->withStatus(200)->withJson($result);
 });
 
-$app->get('/getCategory/{id}', function ($request, $response){
+$app->get('/category/{id}', function ($request, $response){
     $id = $request->getAttribute('id');
     $categoryController = new CategoryController();
     $result = $categoryController->getCategory($id);
     return $response->withJson($result);
 });
 
-$app->get('/getCategories', function ($request, $response){
+$app->get('/category', function ($request, $response){
     $categoryController = new CategoryController();
     $result = $categoryController->getAllCategories();
     return $response->withJson($result);
 });
 
-$app->delete('/deleteCategory/{id}', function ($request, $response) {
+$app->delete('/category/{id}', function ($request, $response) {
     $id = $request->getAttribute('id');
     $moveId = $request->getParam('moveId');
     $categoryController = new CategoryController();

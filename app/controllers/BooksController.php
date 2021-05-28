@@ -4,6 +4,7 @@
 namespace App\controllers;
 
 
+use App\providers\BookCategoryDataProvider;
 use App\providers\BookDataProvider;
 use MongoDB\BSON\ObjectId;
 
@@ -22,7 +23,8 @@ class BooksController
     public function addBook($data) {
         $bookDataProvider = new BookDataProvider();
         $data['price'] = (int) $data['price'];
-        $isBookListed = $bookDataProvider->findOne($data);
+        $searchArray = ['title' => $data['title']];
+        $isBookListed = $bookDataProvider->findOne($searchArray);
 
         if(is_null($isBookListed)){
             $bookDataProvider->insertOne($data);
@@ -46,19 +48,19 @@ class BooksController
         }
 
         return $this->returnSuceessMessage;
-
     }
 
     public function getBookDetails($id) {
         $searchArray = ['_id' => new ObjectId($id)];
         $booksDataProvider = new BookDataProvider();
-        $result = $booksDataProvider->findOne($searchArray);
+        $book = $booksDataProvider->findOne($searchArray);
 
-        if(is_null($result)) {
+        if(is_null($book)) {
             return $this->returnFailedMessage;
         }
-
-        return $result;
+        $categoryName = $this->getCategoryName($book['category_id']);
+        $book['category_name'] = $categoryName;
+        return $book;
     }
 
     public function getAllBooks() {
@@ -72,15 +74,13 @@ class BooksController
             ];
         }
 
-        $result = [];
-
-        foreach ($books as $book) {
-            $book['_id'] = (string) $book['_id'];
-            $result [] = $book;
+        foreach ($books as $key => $book) {
+            $books[$key]['_id'] = (string) $book['_id'];
+            $categoryName = $this->getCategoryName($book['category_id']);
+            $books[$key]['category_name'] = $categoryName;
         }
 
-        return $result;
-
+        return $books;
     }
 
     public function deleteBook($id) {
@@ -98,5 +98,11 @@ class BooksController
         ];
     }
 
-
+    private function getCategoryName($category_id) {
+        $categoryDataProvider = new BookCategoryDataProvider();
+        $categorySearchArray = ['_id' => new ObjectId($category_id)];
+        $projection = ['_id' => 0 ,'name' => 1 ];
+        $category = $categoryDataProvider->findOne($categorySearchArray, $projection);
+        return $category['name'];
+    }
 }
