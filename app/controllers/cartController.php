@@ -6,15 +6,15 @@ namespace App\controllers;
 
 use App\providers\BookDataProvider;
 use App\providers\CartDataProvider;
+use App\util\BaseDataProvider;
 use MongoDB\BSON\ObjectId;
 
 class cartController
 {
     public function addtoCart($data) {
         $data['status'] = 'active'; //add status as active
-
         foreach ($data['orders'] as $key => $order) {
-            $latestPrice = $this->getPrice($order['book_id']);
+            $latestPrice = $this->calculatePrice($order['book_id']);
             $orderPrice =  $this->calculateOrderPrice($latestPrice, (int) $order['qty']);
             $data['orders'][$key]['price'] = $latestPrice;
             $data['orders'][$key]['order_price'] = $orderPrice;
@@ -63,13 +63,13 @@ class cartController
         return $result;
     }
 
-    public function completeOrder($id, $proceed)
+    public function completeOrder($id)
     {
         $searchArray = ['_id' => new ObjectId($id)];
         $cartDataProvider = new CartDataProvider();
         $cart = $cartDataProvider->findOne($searchArray);
 
-        $result = $this->processOrderData($cart, $proceed);
+        $result = $this->processOrderData($cart);
 
         $this->updateBookQuantity($result['orders']);
 
@@ -99,18 +99,50 @@ class cartController
         return $cartDataProvider->updateOne($searchArray, $updateArray);
     }
 
-    private function processOrderData($cart, $proceed) {
+    public function addItemToCart($cart_id, $data) {
 
+        $cartDataProvider = new CartDataProvider();
+        $searchArray = ['_id' => new ObjectId($cart_id)];
+        $cart = $cartDataProvider->findOne($searchArray);
+
+        $price = $this->calculatePrice($data['book_id']);
+        $orderPrice = $price * $data['qty'];
+        $bookStatus = $this->checkQuantity($data['book_id'], $data['qty']);
+
+
+
+        if($bookStatus) {
+            $cart['total_price'] += $orderPrice;
+        }
+
+        $processData = [
+            'book_id' => $data['book_id'],
+            'qty' => $data['qty'],
+            'price' => $price,
+            'order_price' =>$orderPrice,
+            'book_status' => $bookStatus
+        ];
+
+        $bulk = [];
+        $updateArray = ['$push' => ['orders' => $processData]];
+        $updatePrice = ['$set' => ['total_price' => $cart['total_price']]];
+        $bulkUpdateArray = $cartDataProvider->bulkUpdate($searchArray, $updateArray);
+        $bulkUpdatePrice = $cartDataProvider->bulkUpdate($searchArray, $updatePrice);
+        array_push($bulk, $bulkUpdateArray, $bulkUpdatePrice);
+
+        return  $cartDataProvider->bulkWrite($bulk, true);
+
+    }
+
+    private function processOrderData($cart) {
         $cart['total_price'] = 0;
         foreach ($cart['orders'] as $key => $item) {
             $isQuantityAvailabel = $this->checkQuantity($item['book_id'], $item['qty']);
-            $changedPrice = $this->checkPriceChanged($item['book_id'], $item['price']);
 
-            if($changedPrice !== false) {
-                $latestOrderPrice = $this->calculateOrderPrice($changedPrice, $item['qty']);
-                $cart['orders'][$key]['price'] = $changedPrice;
-                $cart['orders'][$key]['order_price'] = $latestOrderPrice;
-            }
+            $bookId = $item['book_id'];
+            $latestPrice = $this->calculatePrice($bookId);
+
+            $cart['orders'][$key]['order_price'] = $latestPrice * $item['qty'];
 
             if($isQuantityAvailabel) {
                 $cart['orders'][$key]['book_status'] = true;
@@ -121,8 +153,31 @@ class cartController
         }
 
         $cart['status'] = 'completed';
-
         return $cart;
+    }
+
+    private function calculatePrice($bookId){
+        $bookDataProvider = new BookDataProvider();
+        $searchArray = ['_id' => new ObjectId($bookId)];
+        $bookDetails = $bookDataProvider->findOne($searchArray);
+        $seasonStartDate =  $bookDetails['season_start_date'];
+        $seasonEndDate =  $bookDetails['season_end_date'];
+        $currentDate = date('Y-m-d H:i:s', time());
+
+        $isSeason = $this->isSeason($seasonStartDate, $seasonEndDate, $currentDate);
+
+        if($isSeason) {
+            return $bookDetails['season_price'];
+        }
+
+        return $bookDetails['price'];
+    }
+
+    private function isSeason($startDate, $endDate, $currentDate) {
+        $startDate = strtotime($startDate);
+        $endDate = strtotime($endDate);
+        $currentDate = strtotime($currentDate);
+        return (($currentDate >= $startDate) && ($currentDate <= $endDate));
     }
 
     public function updateBookQuantity($cart){
@@ -160,30 +215,11 @@ class cartController
         }
     }
 
-    private function checkPriceChanged($book_id, $price){
-        $searchArray = ['_id' => new ObjectId($book_id)];
-        $booksDataProvider = new BookDataProvider();
-        $result = $booksDataProvider->findOne($searchArray);
-
-        if((int) $result['price'] !== $price){
-            return $result['price'];
-        }
-        return false;
-    }
-
-    private function getPrice($book_id) {
-        $searchArray = ['_id' => new ObjectId($book_id)];
-        $booksDataProvider = new BookDataProvider();
-        $result = $booksDataProvider->findOne($searchArray);
-        return (int) $result['price'];
-    }
-
     private function checkQuantity($book_id, $quantity) {
         $searchArray = ['_id' => new ObjectId($book_id)];
         $booksDataProvider = new BookDataProvider();
         $result = $booksDataProvider->findOne($searchArray);
         if($result['quantity'] < $quantity) {
-
             return false;
         }
         return true;
@@ -192,6 +228,5 @@ class cartController
     private function calculateOrderPrice($price, $quantity) {
         return $price * (int) $quantity;
     }
-
 
 }

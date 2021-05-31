@@ -7,6 +7,10 @@ namespace App\controllers;
 use App\providers\BookCategoryDataProvider;
 use App\providers\BookDataProvider;
 use MongoDB\BSON\ObjectId;
+use MongoDB\BSON\Regex;
+use MongoDB\BSON\Timestamp;
+use MongoDB\BSON\UTCDateTime;
+
 
 class BooksController
 {
@@ -61,6 +65,13 @@ class BooksController
         $categoryName = $this->getCategoryName($book['category_id']);
         $book['category_name'] = $categoryName;
         return $book;
+    }
+
+    public function searchBooks($data) {
+        $regex = ['$regex' => new Regex("^$data", 'i')];
+        $searchArray = ['title' => $regex];
+        $booksDataProvider = new BookDataProvider();
+        return $booksDataProvider->find($searchArray);
     }
 
     public function getAllBooks() {

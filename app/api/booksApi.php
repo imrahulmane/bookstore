@@ -32,6 +32,13 @@ $app->get('/book/{id}', function($request, $response){
     return $response->withJson($result);
 });
 
+$app->get('/books/search', function ($request, $response){
+    $data = $request->getParam('data');
+    $bookController =  new BooksController();
+    $result = $bookController->searchBooks($data);
+    return $response->withJson($result);
+});
+
 $app->get('/book', function($request, $response){
     $booksController = new BooksController();
     $result = $booksController->getAllBooks();

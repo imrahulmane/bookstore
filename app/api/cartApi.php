@@ -18,6 +18,15 @@ $app->post('/cart', function($request, $response){
     return $response->withJson($result);
 });
 
+$app->post('/cart/item/{cart_id}', function ($request, $response){
+   $cartId = $request->getAttribute('cart_id');
+   $data = $request->getParam('data');
+   $data = json_decode($data, 1);
+   $cartController = new cartController();
+   $result = $cartController->addItemToCart($cartId, $data);
+   return $response->withJson($result);
+});
+
 $app->get('/cart/{id}', function($request, $response){
     $id = $request->getAttribute('id');
     $cartController = new cartController();
@@ -33,9 +42,8 @@ $app->get('/cart', function($request, $response){
 
 $app->post('/cart/complete/{cart_id}', function($request, $response){
     $id = $request->getAttribute('cart_id');
-    $proceed = $request->getParam('proceed');
     $cartController = new cartController();
-    $result = $cartController->completeOrder($id, $proceed);
+    $result = $cartController->completeOrder($id);
     return $response->withJson($result);
 });
 
@@ -54,5 +62,7 @@ $app->delete('/cart/removeOne/{cart_id}', function($request, $response){
     $result = $cartController->removeItemFromCart($id, $item_id);
     return $response->withJson($result);
 });
+
+
 
 $app->run();
