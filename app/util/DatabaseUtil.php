@@ -10,7 +10,7 @@ class DatabaseUtil
     private $dbName="bookstore";
 
     public function getConnection($collection_name) {
-        $client = new MongoDB\Client('mongodb://172.18.0.11:27017');
+        $client = new MongoDB\Client(getenv("DB_URL"));
         $db = $client->selectDatabase($this->dbName);
         $options = ["typeMap" => ['root' => 'array', 'document' => 'array']];
         $colln = $db->selectCollection($collection_name,$options);
